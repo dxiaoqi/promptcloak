@@ -1,0 +1,8 @@
+{
+  "name": "PromptCloak",
+  "description": "Zero-width steganography for prompts & invite codes. Encode secrets into visible text; optional time & geo locks.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
