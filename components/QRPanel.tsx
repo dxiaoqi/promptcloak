@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { RetroButton, RetroCard, RetroTextArea } from './RetroComponents';
-import { scanQRCodeImage } from '../services/gemini';
+//import { scanQRCodeImage } from '../services/gemini';
 import { LoadingState } from '../types';
 
 export const QRPanel: React.FC = () => {
