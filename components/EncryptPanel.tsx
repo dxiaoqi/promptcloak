@@ -20,6 +20,7 @@ export const EncryptPanel: React.FC = () => {
   
   const [status, setStatus] = useState<LoadingState>(LoadingState.IDLE);
   const [output, setOutput] = useState('');
+  const [shareUrl, setShareUrl] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   // Max image size ~50KB to avoid massive clipboard lag
@@ -48,14 +49,11 @@ export const EncryptPanel: React.FC = () => {
     
     setStatus(LoadingState.PROCESSING);
     setErrorMsg('');
+    setShareUrl('');
     let geo: GeoLocationData | null = null;
     let timestamp: number | undefined = undefined;
 
     try {
-      // Geo/Time Logic disabled for now
-      if (useGeo) {
-          // ... logic preserved but unreachable via UI ...
-      }
       if (useTime) {
         timestamp = new Date().getTime();
       }
@@ -88,6 +86,28 @@ export const EncryptPanel: React.FC = () => {
       }
 
       setOutput(finalCipher);
+      
+      // Generate Short Share URL via Storage API
+      try {
+          const res = await fetch('/api/storage', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ content: finalCipher })
+          });
+          
+          if (res.ok) {
+              const json = await res.json();
+              if (json.id) {
+                  const url = `${window.location.origin}/share?id=${json.id}`;
+                  setShareUrl(url);
+              }
+          } else {
+              console.error("Storage failed, falling back to manual copy");
+          }
+      } catch (storageErr) {
+          console.error("Storage API error", storageErr);
+      }
+
       setStatus(LoadingState.SUCCESS);
     } catch (e: any) {
       console.error(e);
@@ -221,6 +241,42 @@ export const EncryptPanel: React.FC = () => {
                  >
                    Copy Payload
                  </RetroButton>
+
+                 {shareUrl ? (
+                     <div className="mt-4 pt-4 border-t border-slate-800">
+                         <p className="text-xs text-teal-500 mb-2 text-center">SHAREABLE LINK GENERATED</p>
+                         <div className="flex gap-2">
+                             <input 
+                                type="text" 
+                                readOnly 
+                                value={shareUrl} 
+                                className="bg-black border border-teal-900 text-teal-600 text-xs p-2 flex-grow font-mono" 
+                             />
+                             <button 
+                                onClick={() => navigator.clipboard.writeText(shareUrl)}
+                                className="bg-teal-900 text-teal-300 px-3 py-1 text-xs border border-teal-600 hover:bg-teal-800"
+                             >
+                                COPY
+                             </button>
+                         </div>
+                         <div className="mt-4 flex justify-center bg-white p-2 w-fit mx-auto">
+                            <img 
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(shareUrl)}`} 
+                                alt="Share QR"
+                                className="w-32 h-32 image-pixelated" 
+                            />
+                         </div>
+                     </div>
+                 ) : (
+                     output.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-slate-800 text-center">
+                            <p className="text-[10px] text-slate-600">
+                                Output saved locally but link generation failed.<br/>
+                                Please copy payload manually.
+                            </p>
+                        </div>
+                     )
+                 )}
                </div>
             ) : (
               <div className="h-full flex items-center justify-center text-slate-700 flex-col space-y-4">

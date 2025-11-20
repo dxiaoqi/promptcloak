@@ -59,41 +59,27 @@ export const QRPanel: React.FC = () => {
                </div>
            </RetroCard>
 
-           <RetroCard title="API Reference">
-               <div className="space-y-6 font-mono text-xs">
-                   {/* Encode Section */}
-                   <div className="relative group">
-                       <div className="flex items-center justify-between mb-2">
-                           <span className="bg-teal-900 text-teal-300 px-2 py-1 rounded">POST /api/encode</span>
-                           <button 
-                             onClick={() => handleCopyCurl('/api/encode', encodeBody)}
-                             className="text-[10px] uppercase bg-slate-800 hover:bg-teal-900 border border-slate-700 hover:border-teal-500 text-slate-300 px-2 py-1 transition-colors"
-                           >
-                             {copied === '/api/encode' ? 'COPIED!' : 'COPY CURL'}
-                           </button>
-                       </div>
-                       <p className="text-slate-500 mb-2">Encrypts visible text with a hidden payload.</p>
-                       <pre className="bg-black p-3 border border-slate-800 text-slate-300 overflow-x-auto rounded custom-scrollbar">
-{JSON.stringify(encodeBody, null, 2)}
-                       </pre>
+           <RetroCard title="System Architecture">
+               <div className="space-y-4 text-slate-400 text-sm">
+                   <p>
+                       PromptCloak operates as a decentralized, stateless protocol. 
+                       Information is not stored on our servers; it is encrypted and embedded directly into the transport medium (text).
+                   </p>
+                   
+                   <div className="p-4 border border-teal-900 bg-teal-900/10 rounded text-teal-200 text-xs font-mono">
+                       <p className="mb-2 font-bold">PROTOCOL FLOW:</p>
+                       <ol className="list-decimal pl-4 space-y-1">
+                           <li>Input Source & Reward</li>
+                           <li>Apply Access Control (Hashing)</li>
+                           <li>Compress & Encode to Hidden Spectrum</li>
+                           <li>Inject into Visible Text Carrier</li>
+                           <li>Share via Public Channels</li>
+                       </ol>
                    </div>
 
-                   {/* Decode Section */}
-                   <div className="relative group">
-                       <div className="flex items-center justify-between mb-2">
-                           <span className="bg-blue-900 text-blue-300 px-2 py-1 rounded">POST /api/decode</span>
-                           <button 
-                             onClick={() => handleCopyCurl('/api/decode', decodeBody)}
-                             className="text-[10px] uppercase bg-slate-800 hover:bg-blue-900 border border-slate-700 hover:border-blue-500 text-slate-300 px-2 py-1 transition-colors"
-                           >
-                              {copied === '/api/decode' ? 'COPIED!' : 'COPY CURL'}
-                           </button>
-                       </div>
-                       <p className="text-slate-500 mb-2">Decrypts and validates claim codes.</p>
-                       <pre className="bg-black p-3 border border-slate-800 text-slate-300 overflow-x-auto rounded custom-scrollbar">
-{JSON.stringify(decodeBody, null, 2)}
-                       </pre>
-                   </div>
+                   <p className="text-xs italic opacity-60">
+                       * API Reference is currently restricted to authorized integrators. Use the web interface for standard operations.
+                   </p>
                </div>
            </RetroCard>
        </div>
