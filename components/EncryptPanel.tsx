@@ -204,6 +204,7 @@ export const EncryptPanel: React.FC = () => {
           {/* Security Constraints - Temporarily Hidden */}
           <div style={{ display: 'none' }}>
              <RetroCard title="Security Constraints">
+              <></>
                 {/* ... content preserved ... */}
              </RetroCard>
           </div>
