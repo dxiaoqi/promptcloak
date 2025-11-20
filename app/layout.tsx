@@ -1,9 +1,10 @@
+
 import React from 'react';
 import Script from 'next/script';
 
 export const metadata = {
 	title: 'PromptCloak',
-	description: 'Zero-width steganography for prompts & invite codes',
+	description: 'Steganography within the hidden spectrum for prompts & invite codes',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -35,5 +36,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 		</html>
 	);
 }
-
-

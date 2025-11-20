@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { EncryptPanel } from './components/EncryptPanel';
 import { DecryptPanel } from './components/DecryptPanel';
@@ -18,7 +19,7 @@ const App: React.FC = () => {
           </h1>
           <div className="h-1 w-full bg-gradient-to-r from-transparent via-teal-800 to-transparent"></div>
           <p className="text-slate-500 uppercase tracking-[0.3em] text-sm md:text-base">
-            Zero-width steganography for prompts & invite codes
+            Steganography within the hidden spectrum
           </p>
         </header>
 

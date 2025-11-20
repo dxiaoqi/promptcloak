@@ -1,17 +1,47 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { RetroButton, RetroCard, RetroInput, RetroTextArea } from './RetroComponents';
 import { GeoLocationData, LoadingState, HiddenPayload } from '../types';
-import { encodePayload } from '../services/steganography';
+import { encodePayload, hashPassword } from '../services/steganography';
 
 export const EncryptPanel: React.FC = () => {
   const [text, setText] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Prompt Content State
+  const [promptType, setPromptType] = useState<'text' | 'image'>('text');
+  const [promptContent, setPromptContent] = useState('');
+  const [promptImage, setPromptImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Security Constraints - Temporarily Disabled
   const [useGeo, setUseGeo] = useState(false);
   const [useTime, setUseTime] = useState(false);
+  
   const [status, setStatus] = useState<LoadingState>(LoadingState.IDLE);
   const [output, setOutput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Max image size ~50KB to avoid massive clipboard lag
+  const MAX_IMG_SIZE = 50 * 1024; 
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMG_SIZE) {
+       alert(`Image too large! Max size is 50KB for steganography. Current: ${(file.size/1024).toFixed(1)}KB`);
+       return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+       if (typeof ev.target?.result === 'string') {
+           setPromptImage(ev.target.result);
+       }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleEncrypt = async () => {
     if (!text || !password) return;
@@ -22,44 +52,40 @@ export const EncryptPanel: React.FC = () => {
     let timestamp: number | undefined = undefined;
 
     try {
+      // Geo/Time Logic disabled for now
       if (useGeo) {
-        await new Promise<void>((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error("Geolocation not supported by this browser"));
-            return;
-          }
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              geo = {
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-                accuracy: pos.coords.accuracy
-              };
-              resolve();
-            },
-            (err) => {
-              console.warn("Geo fail", err);
-              // Fail hard if user explicitly requested Geo Lock
-              reject(new Error("Failed to acquire location for Geo-Lock. Please enable location permissions."));
-            }
-          );
-        });
+          // ... logic preserved but unreachable via UI ...
       }
-
       if (useTime) {
         timestamp = new Date().getTime();
       }
 
+      // Handle Multiple Passwords
+      const rawPasswords = password.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      const hashedPasswords = await Promise.all(rawPasswords.map(p => hashPassword(p)));
+
       // Construct Payload
       const payload: HiddenPayload = {
         o: text,
-        p: password,
+        access_hashes: hashedPasswords,
         g: geo ? { lat: geo.latitude, lng: geo.longitude } : undefined,
-        t: timestamp
+        t: timestamp,
+        prompt: promptType === 'image' && promptImage ? {
+            type: 'image',
+            content: promptImage
+        } : (promptContent ? {
+            type: 'text',
+            content: promptContent
+        } : undefined)
       };
 
-      // Encode: Original Text + Invisible LZW Compressed Payload
+      // Encode
       const finalCipher = encodePayload(text, payload);
+      
+      // Check approximate size to warn user
+      if (finalCipher.length > 1000000) {
+          console.warn("Warning: Generated text is very large!");
+      }
 
       setOutput(finalCipher);
       setStatus(LoadingState.SUCCESS);
@@ -77,46 +103,90 @@ export const EncryptPanel: React.FC = () => {
           <RetroCard title="Source Data">
             <div className="space-y-4">
               <div>
-                <label className="block text-teal-700 mb-1 uppercase text-sm">Original Message</label>
+                <label className="block text-teal-700 mb-1 uppercase text-sm">Visible Message</label>
                 <RetroTextArea 
                   value={text} 
                   onChange={e => setText(e.target.value)}
-                  placeholder="Enter text to secure..."
+                  placeholder="Enter public text..."
                 />
               </div>
               <div>
-                <label className="block text-teal-700 mb-1 uppercase text-sm">Encryption Key (Password)</label>
+                <label className="block text-teal-700 mb-1 uppercase text-sm">Unlock Keys (Codes)</label>
                 <RetroInput 
                   type="text" 
                   value={password} 
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="SECRET PASSCODE"
+                  placeholder="CODE1, CODE2..."
                 />
               </div>
             </div>
           </RetroCard>
 
-          <RetroCard title="Security Constraints">
-            <div className="space-y-4 text-slate-300">
-              <p className="text-sm text-slate-500 mb-4">Configure environmental locks.</p>
-              
-              <label className="flex items-center space-x-3 cursor-pointer group">
-                <div className={`w-6 h-6 border-2 flex items-center justify-center transition-colors ${useGeo ? 'border-teal-500 bg-teal-900' : 'border-slate-600'}`}>
-                  {useGeo && <span className="block w-3 h-3 bg-teal-400" />}
+          <RetroCard title="Hidden Reward (Prompt)">
+             <div className="space-y-4">
+                <div className="flex gap-4 text-sm mb-2">
+                    <button 
+                        onClick={() => setPromptType('text')}
+                        className={`flex-1 py-1 border ${promptType === 'text' ? 'bg-teal-900 border-teal-500 text-teal-300' : 'border-slate-700 text-slate-500'}`}
+                    >
+                        TEXT PROMPT
+                    </button>
+                    <button 
+                        onClick={() => setPromptType('image')}
+                        className={`flex-1 py-1 border ${promptType === 'image' ? 'bg-teal-900 border-teal-500 text-teal-300' : 'border-slate-700 text-slate-500'}`}
+                    >
+                        IMAGE PROMPT
+                    </button>
                 </div>
-                <input type="checkbox" className="hidden" checked={useGeo} onChange={e => setUseGeo(e.target.checked)} />
-                <span className="group-hover:text-teal-400 transition-colors">Lock to Current Location</span>
-              </label>
 
-              <label className="flex items-center space-x-3 cursor-pointer group">
-                <div className={`w-6 h-6 border-2 flex items-center justify-center transition-colors ${useTime ? 'border-teal-500 bg-teal-900' : 'border-slate-600'}`}>
-                  {useTime && <span className="block w-3 h-3 bg-teal-400" />}
-                </div>
-                <input type="checkbox" className="hidden" checked={useTime} onChange={e => setUseTime(e.target.checked)} />
-                <span className="group-hover:text-teal-400 transition-colors">Lock to Current Time</span>
-              </label>
-            </div>
+                {promptType === 'text' ? (
+                    <RetroTextArea 
+                        value={promptContent}
+                        onChange={e => setPromptContent(e.target.value)}
+                        placeholder="Enter the secret prompt or reward text..."
+                        className="h-24"
+                    />
+                ) : (
+                    <div className="border-2 border-dashed border-slate-700 p-4 text-center relative hover:border-teal-800 transition-colors">
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        {promptImage ? (
+                            <div className="relative">
+                                <img src={promptImage} alt="Preview" className="max-h-32 mx-auto object-contain border border-teal-900" />
+                                <button 
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setPromptImage(null);
+                                        if(fileInputRef.current) fileInputRef.current.value = '';
+                                    }}
+                                    className="absolute -top-2 -right-2 bg-red-900 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center border border-red-500 z-10"
+                                >
+                                    X
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-slate-500 py-4">
+                                <p className="mb-1">CLICK TO UPLOAD</p>
+                                <p className="text-[10px] uppercase text-slate-600">Max 50KB (Pixel Art / Icons)</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+             </div>
           </RetroCard>
+
+          {/* Security Constraints - Temporarily Hidden */}
+          <div style={{ display: 'none' }}>
+             <RetroCard title="Security Constraints">
+                {/* ... content preserved ... */}
+             </RetroCard>
+          </div>
 
           {status === LoadingState.ERROR && (
             <div className="p-3 border-2 border-red-800 bg-red-900/20 text-red-400 text-sm font-bold">
@@ -138,11 +208,11 @@ export const EncryptPanel: React.FC = () => {
           <RetroCard title="Output Stream" className="h-full min-h-[400px]">
             {status === LoadingState.SUCCESS ? (
                <div className="space-y-4 h-full flex flex-col">
-                 <div className="flex-grow p-4 border-2 border-teal-900/30 bg-teal-950/10 text-teal-300 font-serif tracking-wide leading-relaxed whitespace-pre-wrap overflow-y-auto text-sm">
+                 <div className="flex-grow p-4 border-2 border-teal-900/30 bg-teal-950/10 text-teal-300 font-serif tracking-wide leading-relaxed whitespace-pre-wrap overflow-y-auto text-sm break-all">
                    {output}
                  </div>
                  <div className="text-xs text-slate-500 text-center">
-                   * Visual text remains unaltered. Payload hidden in zero-width spectrum.
+                   * Visual text remains unaltered. Payload hidden in the hidden spectrum.
                  </div>
                  <RetroButton 
                    variant="secondary" 

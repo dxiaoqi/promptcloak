@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "PromptCloak: Zero-width steganography for prompts & invite codes.",
+  "description": "PromptCloak: Hidden spectrum steganography for prompts & invite codes.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

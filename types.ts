@@ -12,10 +12,18 @@ export interface GeoLocationData {
 }
 
 export interface HiddenPayload {
-  o: string; // Original Text
-  p: string; // Password
+  o: string; // Original Text (The content displayed if no specific prompt)
+  p?: string; // Legacy: Single Password
+  access_hashes?: string[]; // List of valid password hashes
   g?: { lat: number; lng: number }; // Geo Constraints
-  t?: number; // Time Constraint (Timestamp)
+  t?: number; // Time Constraint
+  
+  // New: Reward/Prompt Content
+  prompt?: {
+    type: 'text' | 'image';
+    content: string; // The actual text prompt or Base64 image data
+    mimeType?: string; // e.g., 'image/png'
+  };
 }
 
 export interface EncryptionResult {

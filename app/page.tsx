@@ -21,7 +21,7 @@ export default function HomePage() {
 					</h1>
 					<div className="h-1 w-full bg-gradient-to-r from-transparent via-teal-800 to-transparent"></div>
 					<p className="text-slate-500 uppercase tracking-[0.3em] text-sm md:text-base">
-						Zero-width steganography for prompts & invite codes
+						Steganography within the hidden spectrum
 					</p>
 				</header>
 
@@ -54,7 +54,7 @@ export default function HomePage() {
 								: 'border-slate-800 text-slate-600 hover:text-slate-400'
 						}`}
 					>
-						[ QR Tools ]
+						[ Docs & API ]
 					</button>
 				</nav>
 
@@ -80,5 +80,3 @@ export default function HomePage() {
 		</div>
 	);
 }
-
-

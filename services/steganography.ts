@@ -11,6 +11,35 @@ const ZWC_MAP = ['\u200b', '\u200c', '\u200d', '\u2060'];
 const MARKER_START = '\uFEFF\u200B'; // BOM + ZWSP as header
 const MARKER_END = '\u200B\uFEFF';
 
+// --- Crypto Helper (SHA-256) ---
+// Supports both Browser (subtle) and Node (crypto module)
+export async function hashPassword(text: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(text);
+  
+  // Node.js environment check
+  if (typeof window === 'undefined' && typeof global !== 'undefined') {
+     try {
+       // Use Node.js crypto module via dynamic import or global require if available
+       // For Next.js API routes, this will run in Node
+       const crypto = await import('crypto');
+       const hash = crypto.createHash('sha256').update(text).digest('hex');
+       return hash;
+     } catch (e) {
+       console.error("Node Crypto fail", e);
+       return ""; // Fallback or error
+     }
+  }
+
+  // Browser environment
+  if (window.crypto && window.crypto.subtle) {
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  
+  return "";
+}
+
 // --- LZW Compression Algorithm ---
 
 const lzwCompress = (uncompressed: string): number[] => {
@@ -85,7 +114,7 @@ const zwcToNumber = (zwcChunk: string): number => {
 };
 
 /**
- * Encodes a JSON payload using LZW compression and Base4 Zero-Width characters.
+ * Encodes a JSON payload using LZW compression and Base4 Hidden Spectrum characters.
  * Uses URI encoding to support Unicode inputs safely within LZW 8-bit dictionary assumptions.
  */
 export const encodePayload = (visibleText: string, payload: HiddenPayload): string => {

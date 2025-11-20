@@ -1,5 +1,6 @@
+
 import { NextResponse } from 'next/server';
-import { encodePayload } from '../../../services/steganography';
+import { encodePayload, hashPassword } from '../../../services/steganography';
 import { HiddenPayload } from '../../../types';
 
 const corsHeaders = {
@@ -20,14 +21,35 @@ export async function POST(req: Request) {
 
 		const body = await req.json();
 		const visibleText: string = body?.visibleText;
-		const payload: HiddenPayload = body?.payload;
+		const payloadInput = body?.payload;
 
-		if (typeof visibleText !== 'string' || !payload || typeof payload.o !== 'string' || typeof payload.p !== 'string') {
+		if (typeof visibleText !== 'string' || !payloadInput || typeof payloadInput.o !== 'string') {
 			return NextResponse.json(
-				{ error: 'Invalid request body. Expected { visibleText: string, payload: HiddenPayload }' },
+				{ error: 'Invalid request body. Expected { visibleText: string, payload: { o: string, p?: string, access_codes?: string[] } }' },
 				{ status: 400, headers: corsHeaders }
 			);
 		}
+
+        // Transform access_codes to hashes if provided
+        let access_hashes: string[] | undefined = undefined;
+        if (Array.isArray(body.payload.access_codes)) {
+             access_hashes = await Promise.all(body.payload.access_codes.map((c: string) => hashPassword(c)));
+        } else if (body.payload.p) {
+            // Legacy support: if 'p' is sent but no access_codes, keep 'p' or convert to hash?
+            // For API consistency, let's create a hash for 'p' as well if we want to move to the new system.
+            // But to be safe, let's just keep 'p' if access_codes is missing, OR convert it.
+            // Let's convert it to unify logic.
+            const h = await hashPassword(body.payload.p);
+            access_hashes = [h];
+        }
+
+        const payload: HiddenPayload = {
+            o: payloadInput.o,
+            // Remove raw password 'p' from final payload if we have hashes
+            access_hashes, 
+            g: payloadInput.g,
+            t: payloadInput.t
+        };
 
 		const cipherText = encodePayload(visibleText, payload);
 
@@ -57,5 +79,3 @@ export async function POST(req: Request) {
 		return NextResponse.json({ error: err?.message || 'Internal Server Error' }, { status: 500, headers: corsHeaders });
 	}
 }
-
-

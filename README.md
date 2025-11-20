@@ -4,7 +4,7 @@
 
 # PromptCloak
 
-Zero-width steganography for prompts & invite codes. Encode secrets into visible text with optional time/geo locks, and expose open APIs for encode/decode.
+Hidden spectrum steganography for prompts & invite codes. Encode secrets into visible text with optional time/geo locks, and expose open APIs for encode/decode.
 
 This contains everything you need to run the app locally (Next.js).
 
@@ -29,4 +29,4 @@ View your app in AI Studio: https://ai.studio/apps/drive/1CD1FWoM21oQqyZIU-thkqE
 
 - POST `/api/decode`  
   Body: `{ "text": string }`  
-  Accepts escaped zero-width sequences and normalizes automatically.
+  Accepts escaped hidden spectrum sequences and normalizes automatically.
